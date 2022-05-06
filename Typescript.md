@@ -7,21 +7,21 @@
 ## 타입스크립트의 타입과 타입 선언 시스템
 
 - 기본 자료형
-  - string: 문자열
-  - boolean : 참 / 거짓
-  - number : 숫자
-  - null : 의도적으로 비어있는 값
-  - undefined : 아무 값이 할당되지 않은 상태
+  - `string` : 문자열
+  - `boolean` : 참 / 거짓
+  - `number` : 숫자
+  - `null` : 의도적으로 비어있는 값
+  - `undefined` : 아무 값이 할당되지 않은 상태
 - 참조 자료형
-  - object : 기본 자료형 외의 타입
-  - array : 배열
+  - `object` : 기본 자료형 외의 타입
+  - `array` : 배열
 - 추가 자료형\*
 
-  - tuple : 길이와 각 요소의 타입이 정해진 배열
-  - enum : 특정 값들의 집합
-  - any : 모든 타입을 저장 가능
-  - void : 결과 값을 반환하지 않는 함수의 타입
-  - never : 항상 오류를 발생시키거나 반환이 없는 함수의 타입
+  - `tuple` : 길이와 각 요소의 타입이 정해진 배열
+  - `enum` : 특정 값들의 집합
+  - `any` : 모든 타입을 저장 가능
+  - `void` : 결과 값을 반환하지 않는 함수의 타입
+  - `never` : 항상 오류를 발생시키거나 반환이 없는 함수의 타입
 
 - 유니언 타입
 
@@ -102,6 +102,8 @@ printText("Hello, world", "left");
 printText("G'day, mate", "centre"); // ERROR : Argument of type '"centre"' is not assignable to parameter of type '"left" | "right" | "center"'.
 ```
 
+구체적인 문자열과 숫자 값을 타입 위치에서 지정할 수 있다. 유니언 타입과 함께 사용하면 특정 종류의 값들만을 인자로 받을 수 있는 타입을 정의할 수 있다.
+
 - 유틸리티 타입 (Utility Type)
   - `Partial<T>` : T의 프로퍼티를 선택적으로 구성할 수 있습니다.
   - `Readonly<T>` : T의 프로퍼티를 읽기 전용으로 설정하여, 값을 재할당하는 경우 에러가 발생합니다.
@@ -116,6 +118,77 @@ printText("G'day, mate", "centre"); // ERROR : Argument of type '"centre"' is no
   - `ConstructorParameters<T>` : 클래스의 생성자를 비롯한 생성자 타입의 모든 매개변수 타입을 추출합니다.
   - `ReturnType<T>` : 함수 T가 반환한 타입으로 타입을 구성합니다.
   - `Required<T>` : 타입 T의 모든 프로퍼티가 필수로 설정된 타입을 구성합니다.
+
+## 제네릭 (Generic)
+
+```ts
+function echo<T>(text: T): T {
+  return text;
+}
+console.log(echo<string>("hi"));
+console.log(echo<number>(10));
+console.log(echo<boolean>(true));
+```
+
+제네릭(Generic)이란 어떤 함수나 클래스가 사용할 타입을 생성 단계가 아닌 사용 단계에서 정의하는 프로그래밍 기법이다. 즉, 타입을 명시할 때 선언 시점이 아닌 생성 시점에 명시하여 하나의 타입으로만 사용하지 않고 다양한 타입을 사용할 수 있다. 일반적인 정적 타입 언어는 함수나 클래스를 정의할 때 타입을 선언해야 하지만, 제네릭을 이용해 코드가 수행될 때 타입이 명시되도록 하는 것이다.
+
+- 제네릭을 사용하는 이유
+
+  - 재사용성이 높은 함수나 클래스를 생성할 수 있다.
+  - 중복 코드가 줄어들고 반환 타입을 명시하기 때문에 가독성이 좋아진다.
+  - 제네릭을 사용하지 않는다면 any타입을 선언하거나 타입별로 함수나 클래스를 만들어야한다.
+
+- 제약조건 (Constraints, keyof)
+
+  - Contraints
+
+  ```ts
+  const printMessage = <T extends string | number>(message: T): T => {
+    return message;
+  };
+  ```
+
+  원하지 않는 속성에 접근하는 것을 막기 위해 `extends` 키워드를 이용해 제약조건(Constraints)을 사용할 수 있다.
+
+  - keyof
+
+  ```ts
+  const getProperty = <T extends object, U extends keyof T>(obj: T, key: U) => {
+    return obj[key];
+  };
+  ```
+
+  `keyof`를 이용하면 객체의 키에 제약 조건을 걸 수 있다. 위 예제의 경우 U 타입에 들어오는 값이 T 타입의 키에 포함되어 있지 않다면 에러가 발생하게 된다.
+
+- 제네릭을 이용한 디자인 패턴
+
+  객체를 생성하는 인터페이스만 미리 정의하고, 인스턴스를 만드는 것을 서브 클래스가 하는 패턴이다. 여러 개의 서브 클래스를 가진 슈퍼 클래스가 있을 때, 입력에 따라 하나의 서브 클래스의 인스턴스를 반환한다.
+
+  ```ts
+  interface Car {
+    park(): void;
+  }
+
+  class Bus implements Car {
+    park(): void {
+      console.log("버스 주차");
+    }
+  }
+  class Taxi implements Car {
+    park(): void {
+      console.log("택시 주차");
+    }
+  }
+
+  class CarFactory {
+    static getInstance<T extends Car>(type: { new (): T }): T {
+      return new type();
+    }
+  }
+  const bus = CarFactory.getInstance(Bus);
+
+  bus.park();
+  ```
 
 ## 참조
 
